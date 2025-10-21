@@ -9,13 +9,16 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
-    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .card-shadow { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
-    .option-card { transition: all 0.3s ease; cursor: pointer; }
-    .option-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-    .option-card.selected { border-color: #667eea; background-color: #f3f4f6; }
-    .option-card.correct { border-color: #10b981; background-color: #d1fae5; }
-    .option-card.incorrect { border-color: #ef4444; background-color: #fee2e2; }
+    /* Dark gradient background */
+    .gradient-bg { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+    /* Stronger shadow for dark surfaces */
+    .card-shadow { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); }
+    /* Option cards */
+    .option-card { transition: all 0.3s ease; cursor: pointer; background: #1e293b; border-color: #334155; }
+    .option-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); border-color: #6366f1; }
+    .option-card.selected { border-color: #6366f1; background-color: #312e81; }
+    .option-card.correct { border-color: #10b981; background-color: #064e3b; }
+    .option-card.incorrect { border-color: #ef4444; background-color: #7f1d1d; }
     .fade-in { animation: fadeIn 0.5s ease-in; }
     @keyframes fadeIn { from {opacity:0; transform: translateY(10px);} to {opacity:1; transform: translateY(0);} }
     .progress-bar { transition: width 0.5s ease; }
@@ -26,7 +29,7 @@
     .timer.danger { color:#ef4444; }
     .timer-circle { stroke-dasharray: 283; stroke-dashoffset: 0; transform: rotate(-90deg); transform-origin:center; transition: stroke-dashoffset 1s linear; }
     /* Leaderboard strip */
-    .leaderboard-strip { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); border-top: 1px solid #e5e7eb; backdrop-filter: blur(6px); }
+    .leaderboard-strip { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.95); border-top: 1px solid #1f2937; backdrop-filter: blur(6px); }
     .avatar { width: 48px; height: 48px; border-radius: 9999px; object-fit: cover; }
     /* Custom select with consistent caret padding */
     .nice-select {
@@ -39,30 +42,42 @@
       background-size: 16px 16px;
       padding-right: 2.5rem; /* room for caret */
     }
+    /* Dark helpers */
+    .dark-bg { background-color: #0f172a; }
+    .dark-card { background-color: #1e293b; color: #e2e8f0; }
+    .dark-input { background-color: #334155; color: #e2e8f0; border-color: #475569; }
+    .dark-input:focus { border-color: #6366f1; background-color: #312e81; }
+    .dark-text-secondary { color: #94a3b8; }
+    .dark-button { background-color: #6366f1; color: #ffffff; }
+    .dark-button:hover { background-color: #4f46e5; }
+    .dark-button-secondary { background-color: #334155; color: #e2e8f0; }
+    .dark-button-secondary:hover { background-color: #475569; }
+    .dark-progress-bg { background-color: #334155; }
+    .dark-option-label { background-color: #475569; color: #e2e8f0; }
   </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="dark-bg min-h-screen">
   <!-- Welcome Screen -->
   <div id="welcomeScreen" class="min-h-screen gradient-bg flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl card-shadow p-8 md:p-12 max-w-md w-full fade-in">
+    <div class="dark-card rounded-2xl card-shadow p-8 md:p-12 max-w-md w-full fade-in">
       <div class="text-center mb-8">
-        <i class="fas fa-laptop-code text-6xl text-purple-600 mb-4"></i>
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">TechQuiz Pro</h1>
-        <p class="text-gray-600">Multiplayer – compete in real time!</p>
+        <i class="fas fa-laptop-code text-6xl text-indigo-400 mb-4"></i>
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">TechQuiz Pro</h1>
+        <p class="dark-text-secondary">Multiplayer – compete in real time!</p>
       </div>
 
       <form id="nameForm" class="space-y-6">
         <div>
-          <label for="userName" class="block text-sm font-medium text-gray-700 mb-2">Enter Your Name</label>
-          <input type="text" id="userName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition duration-200" placeholder="John Doe" />
+          <label for="userName" class="block text-sm font-medium text-gray-300 mb-2">Enter Your Name</label>
+          <input type="text" id="userName" required class="dark-input w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200" placeholder="John Doe" />
         </div>
         <div>
-          <label for="avatarUrl" class="block text-sm font-medium text-gray-700 mb-2">Avatar URL (optional)</label>
-          <input type="url" id="avatarUrl" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition duration-200" placeholder="https://..." />
+          <label for="avatarUrl" class="block text-sm font-medium text-gray-300 mb-2">Avatar URL (optional)</label>
+          <input type="url" id="avatarUrl" class="dark-input w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200" placeholder="https://..." />
         </div>
-        <button type="submit" class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transform hover:scale-105 transition duration-200">Join Lobby <i class="fas fa-arrow-right ml-2"></i></button>
+        <button type="submit" class="w-full dark-button py-3 px-6 rounded-lg font-semibold transform hover:scale-105 transition duration-200">Join Lobby <i class="fas fa-arrow-right ml-2"></i></button>
       </form>
-      <div class="mt-8 text-center text-sm text-gray-600">
+      <div class="mt-8 text-center text-sm dark-text-secondary">
         <p><i class="fas fa-info-circle mr-1"></i> 10 questions • +10 for correct • -2 for wrong/timeout</p>
         <p><i class="fas fa-clock mr-1"></i> 10 seconds per question</p>
       </div>
@@ -71,22 +86,22 @@
 
   <!-- Lobby Screen -->
   <div id="lobbyScreen" class="hidden min-h-screen gradient-bg flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl card-shadow p-8 md:p-10 max-w-xl w-full">
+    <div class="dark-card rounded-2xl card-shadow p-8 md:p-10 max-w-xl w-full">
       <div class="mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-1">Lobby</h2>
-        <p class="text-gray-600">Choose a topic and start when everyone is ready.</p>
+        <h2 class="text-2xl font-bold text-white mb-1">Lobby</h2>
+        <p class="dark-text-secondary">Choose a topic and start when everyone is ready.</p>
       </div>
       <div class="grid md:grid-cols-2 gap-6 mb-6">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Selected Topic</label>
-          <select id="topicSelect" class="nice-select w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition duration-200 cursor-pointer"></select>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Selected Topic</label>
+          <select id="topicSelect" class="nice-select dark-input w-full pl-4 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 cursor-pointer"></select>
         </div>
         <div class="flex items-end">
-          <button id="startGameBtn" type="button" onclick="window.triggerStartGame && window.triggerStartGame()" class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transform hover:scale-105 transition duration-200 cursor-pointer">Start Game</button>
+          <button id="startGameBtn" type="button" onclick="window.triggerStartGame && window.triggerStartGame()" class="w-full dark-button text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-600 transform hover:scale-105 transition duration-200 cursor-pointer">Start Game</button>
         </div>
       </div>
       <div>
-        <p class="text-sm text-gray-600 mb-2">Participants</p>
+        <p class="text-sm dark-text-secondary mb-2">Participants</p>
         <div id="lobbyParticipants" class="flex items-center gap-3 flex-wrap"></div>
       </div>
     </div>
@@ -94,30 +109,30 @@
 
   <!-- Quiz Screen -->
   <div id="quizScreen" class="hidden min-h-screen gradient-bg flex items-center justify-center p-4 pb-24">
-    <div class="bg-white rounded-2xl card-shadow p-6 md:p-8 max-w-2xl w-full">
+    <div class="dark-card rounded-2xl card-shadow p-6 md:p-8 max-w-2xl w-full">
       <!-- Header -->
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center space-x-4">
-          <div class="bg-purple-100 p-3 rounded-lg"><i class="fas fa-user text-purple-600"></i></div>
+          <div class="bg-indigo-900 p-3 rounded-lg"><i class="fas fa-user text-indigo-400"></i></div>
           <div>
-            <p class="text-sm text-gray-600">Player</p>
-            <p id="playerName" class="font-semibold text-gray-800"></p>
+            <p class="text-sm dark-text-secondary">Player</p>
+            <p id="playerName" class="font-semibold text-white"></p>
           </div>
         </div>
         <div class="text-right">
-          <p class="text-sm text-gray-600">Score</p>
-          <p id="currentScore" class="text-2xl font-bold text-purple-600">0</p>
+          <p class="text-sm dark-text-secondary">Score</p>
+          <p id="currentScore" class="text-2xl font-bold text-indigo-400">0</p>
         </div>
       </div>
 
       <!-- Progress Bar -->
       <div class="mb-8">
-        <div class="flex justify-between text-sm text-gray-600 mb-2">
+        <div class="flex justify-between text-sm dark-text-secondary mb-2">
           <span>Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span></span>
           <span id="progressPercent">0%</span>
         </div>
-        <div class="w-full bg-gray-200 rounded-full h-3">
-          <div id="progressBar" class="progress-bar bg-purple-600 h-3 rounded-full" style="width: 0%"></div>
+        <div class="w-full dark-progress-bg rounded-full h-3">
+          <div id="progressBar" class="progress-bar bg-indigo-500 h-3 rounded-full" style="width: 0%"></div>
         </div>
       </div>
 
@@ -125,48 +140,48 @@
       <div class="flex justify-center mb-6">
         <div class="relative w-16 h-16">
           <svg class="w-full h-full" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" stroke-width="8" />
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#334155" stroke-width="8" />
             <circle id="timerCircle" class="timer-circle" cx="50" cy="50" r="45" fill="none" stroke="#6366f1" stroke-width="8" />
           </svg>
           <div class="absolute inset-0 flex items-center justify-center">
-            <span id="timerText" class="text-lg font-bold text-gray-800">10</span>
+            <span id="timerText" class="text-lg font-bold text-white">10</span>
           </div>
         </div>
       </div>
 
       <!-- Question -->
       <div class="mb-8">
-        <h2 id="questionText" class="text-xl md:text-2xl font-semibold text-gray-800 mb-6 fade-in"></h2>
+        <h2 id="questionText" class="text-xl md:text-2xl font-semibold text-white mb-6 fade-in"></h2>
         <div id="optionsContainer" class="space-y-3"></div>
       </div>
 
       <!-- Next state hint -->
-      <div class="text-center text-sm text-gray-500" id="statusHint"></div>
+      <div class="text-center text-sm dark-text-secondary" id="statusHint"></div>
     </div>
   </div>
 
   <!-- Results Screen -->
   <div id="resultsScreen" class="hidden min-h-screen gradient-bg flex items-center justify-center p-4 pb-24">
-    <div class="bg-white rounded-2xl card-shadow p-8 md:p-12 max-w-2xl w-full fade-in">
+    <div class="dark-card rounded-2xl card-shadow p-8 md:p-12 max-w-2xl w-full fade-in">
       <div class="text-center mb-8">
         <i id="resultIcon" class="text-6xl mb-4"></i>
-        <h2 id="resultTitle" class="text-3xl font-bold text-gray-800 mb-2">Round Complete!</h2>
-        <p class="text-gray-600">Your Final Score</p>
-        <p id="finalScore" class="text-4xl font-bold text-purple-600 mt-2"></p>
+        <h2 id="resultTitle" class="text-3xl font-bold text-white mb-2">Round Complete!</h2>
+        <p class="dark-text-secondary">Your Final Score</p>
+        <p id="finalScore" class="text-4xl font-bold text-indigo-400 mt-2"></p>
       </div>
 
       <div class="grid md:grid-cols-2 gap-6 mb-6">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Selected Topic</label>
-          <select id="topicSelectResults" class="nice-select w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent transition duration-200 cursor-pointer"></select>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Selected Topic</label>
+          <select id="topicSelectResults" class="nice-select dark-input w-full pl-4 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 cursor-pointer"></select>
         </div>
         <div class="flex items-end">
-          <button id="newGameBtn" class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transform hover:scale-105 transition duration-200">New Game</button>
+          <button id="newGameBtn" class="w-full dark-button text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-600 transform hover:scale-105 transition duration-200">New Game</button>
         </div>
       </div>
 
       <div>
-        <p class="text-sm text-gray-600 mb-2">Participants</p>
+        <p class="text-sm dark-text-secondary mb-2">Participants</p>
         <div id="lobbyParticipantsResults" class="flex items-center gap-3 flex-wrap"></div>
       </div>
     </div>

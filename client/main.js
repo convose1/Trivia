@@ -100,11 +100,11 @@ function renderLeaderboard(list) {
     const item = document.createElement('div');
     item.className = 'flex items-center gap-2 shrink-0';
     item.innerHTML = `
-      <div class="text-xs text-gray-500 w-5 text-center">${idx + 1}</div>
-      <img class="avatar border border-gray-200" src="${p.avatar}" alt="${p.name}" />
+      <div class="text-xs text-slate-400 w-5 text-center">${idx + 1}</div>
+      <img class="avatar border border-slate-600" src="${p.avatar}" alt="${p.name}" />
       <div class="flex flex-col leading-tight">
-        <div class="text-xs font-medium text-gray-800">${p.name}</div>
-        <div class="text-[11px] text-purple-600 font-semibold">${p.score} pts</div>
+        <div class="text-xs font-medium text-slate-100">${p.name}</div>
+        <div class="text-[11px] text-indigo-400 font-semibold">${p.score} pts</div>
       </div>
     `;
     leaderboardList.appendChild(item);
@@ -158,13 +158,13 @@ function renderQuestion(payload) {
   optionsContainer.innerHTML = '';
   payload.options.forEach((option, index) => {
     const optionCard = document.createElement('div');
-    optionCard.className = 'option-card bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-purple-400';
+    optionCard.className = 'option-card border-2 rounded-lg p-4 hover:border-indigo-500';
     optionCard.innerHTML = `
       <div class="flex items-center">
-        <div class="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
-          <span class="text-sm font-semibold text-gray-600">${String.fromCharCode(65 + index)}</span>
+        <div class="flex-shrink-0 w-8 h-8 dark-option-label rounded-full flex items-center justify-center mr-3">
+          <span class="text-sm font-semibold">${String.fromCharCode(65 + index)}</span>
         </div>
-        <span class="text-gray-800">${option}</span>
+        <span class="text-slate-200">${option}</span>
       </div>
     `;
     optionCard.addEventListener('click', () => onSelect(index, optionCard));
