@@ -1,8 +1,43 @@
 // Temporary: confirm client script is actually loading in the browser
 try { console.log('[UI] main.js initialized'); } catch {}
 
+// Support embedding: receive player name/avatar and optional start command from parent
+try {
+  window.addEventListener('message', (e) => {
+    const origin = e.origin || '';
+    const allowed = [
+      'http://localhost:',
+      'http://127.0.0.1:',
+      'https://convose.com',
+    ];
+    if (!allowed.some(p => origin.startsWith(p))) return;
+    const data = e.data || {};
+    if (data && data.type === 'SET_PLAYER_NAME') {
+      const payload = data.payload || {};
+      const name = String(payload.name || '').trim();
+      const avatar = String(payload.avatar || '').trim();
+      if (name) {
+        myName = name;
+        myAvatar = avatar;
+        socket.emit('join', { name, avatar });
+        hasJoined = true;
+        hide(welcomeScreen);
+        show(lobbyScreen);
+        currentPhase = 'lobby';
+        inRound = false;
+      }
+    }
+    if (data && data.type === 'START_GAME') {
+      socket.emit('startGame');
+    }
+  });
+} catch {}
+
 /* Multiplayer TechQuiz client */
-const socket = io();
+// Allow overriding the socket server via query string: ?server=https://your-server.example.com
+const qs = new URLSearchParams(location.search);
+const serverOverride = qs.get('server');
+const socket = serverOverride ? io(serverOverride) : io();
 try { console.log('[SOCKET] attempting connection...'); } catch {}
 
 // --- DOM elements ---
