@@ -1,0 +1,10 @@
+# Netlify headers to allow embedding Trivia in iframe
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+  # Allow embedding from your dev and prod apps
+  Content-Security-Policy = "frame-ancestors 'self' http://localhost:3000 http://localhost:3001 https://convose.com https://*.convose.com;"
+
+  # Remove X-Frame-Options (use CSP instead)
+  X-Frame-Options = ""
