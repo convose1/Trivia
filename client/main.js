@@ -1,6 +1,42 @@
 // Temporary: confirm client script is actually loading in the browser
 try { console.log('[UI] main.js initialized'); } catch {}
 
+// Update the Start button text in the lobby to "Starting in N" during countdown
+function updateStartButtonCountdown(deadlineTs) {
+  if (!startGameBtn || !deadlineTs) return;
+  try { clearInterval(startBtnInterval); } catch {}
+  const tick = () => {
+    const now = Date.now();
+    const left = Math.max(0, Math.ceil((deadlineTs - now) / 1000));
+    if (left > 0) {
+      startGameBtn.textContent = `Starting in ${left}`;
+      startGameBtn.disabled = true;
+      startGameBtn.classList.add('opacity-75', 'cursor-not-allowed');
+    } else {
+      startGameBtn.textContent = 'Starting...';
+      clearInterval(startBtnInterval);
+    }
+  };
+  tick();
+  startBtnInterval = setInterval(tick, 200);
+}
+
+// Render the participants row within the quiz card using latest scores
+function renderQuizParticipants() {
+  if (!quizParticipants) return;
+  quizParticipants.innerHTML = '';
+  (lastParticipants || []).forEach(p => {
+    const score = latestScores.get(p.id) ?? (typeof p.score === 'number' ? p.score : 0);
+    const wrap = document.createElement('div');
+    wrap.className = 'avatar-wrap';
+    wrap.innerHTML = `
+      <img class="avatar border border-gray-200" src="${p.avatar}" alt="${p.name}" title="${p.name}" />
+      <div class="score-badge">${score}</div>
+    `;
+    quizParticipants.appendChild(wrap);
+  });
+}
+
 // Support embedding: receive player name/avatar and optional start command from parent
 try {
   window.addEventListener('message', (e) => {
@@ -37,6 +73,8 @@ try {
 // Allow overriding the socket server via query string: ?server=https://your-server.example.com
 const qs = new URLSearchParams(location.search);
 const serverOverride = qs.get('server');
+const qsName = qs.get('name');
+const qsAvatar = qs.get('avatar');
 const socket = serverOverride ? io(serverOverride) : io();
 try { console.log('[SOCKET] attempting connection...'); } catch {}
 
@@ -57,6 +95,7 @@ const optionsContainer = document.getElementById('optionsContainer');
 const timerText = document.getElementById('timerText');
 const timerCircle = document.getElementById('timerCircle');
 const statusHint = document.getElementById('statusHint');
+const quizParticipants = document.getElementById('quizParticipants');
 
 const leaderboardStrip = document.getElementById('leaderboardStrip');
 const leaderboardList = document.getElementById('leaderboardList');
@@ -81,6 +120,7 @@ let myScore = 0;
 let answered = false;
 let deadlineTs = 0;
 let timerInterval = null;
+let startBtnInterval = null;
 let lastQuestionIdx = -1;
 let totalQuestions = 10;
 let hasJoined = false;
@@ -90,10 +130,26 @@ let inRound = false;
 let lastTopic = 'Technology';
 let lastTopics = [];
 let lastParticipants = [];
+let latestScores = new Map(); // id -> score
+
+// Auto-join helper so the user appears in Participants when lobby loads
+function autoJoinIfNeeded() {
+  if (hasJoined) return;
+  let name = String(qsName || '').trim();
+  let avatar = String(qsAvatar || '').trim();
+  if (!name) {
+    const suffix = String((Math.random() * 10000) | 0).padStart(4, '0');
+    name = `Guest-${suffix}`;
+  }
+  myName = name;
+  myAvatar = avatar;
+  socket.emit('join', { name, avatar });
+  hasJoined = true;
+}
 
 // --- Utilities ---
-function show(el) { el.classList.remove('hidden'); }
-function hide(el) { el.classList.add('hidden'); }
+function show(el) { if (el) el.classList.remove('hidden'); }
+function hide(el) { if (el) el.classList.add('hidden'); }
 function setTimerFromDeadline(deadline) {
   clearInterval(timerInterval);
   deadlineTs = deadline || 0;
@@ -128,27 +184,16 @@ function tickTimer() {
 }
 
 function renderLeaderboard(list) {
-  leaderboardList.innerHTML = '';
-  // remember as participants snapshot (id, name, avatar)
+  // Track scores only; do not render bottom strip
+  latestScores = new Map(list.map(p => [p.id, p.score]));
   lastParticipants = list.map(p => ({ id: p.id, name: p.name, avatar: p.avatar, score: p.score }));
-  list.forEach((p, idx) => {
-    const item = document.createElement('div');
-    item.className = 'flex items-center gap-2 shrink-0';
-    item.innerHTML = `
-      <div class="text-xs text-slate-400 w-5 text-center">${idx + 1}</div>
-      <img class="avatar border border-slate-600" src="${p.avatar}" alt="${p.name}" />
-      <div class="flex flex-col leading-tight">
-        <div class="text-xs font-medium text-slate-100">${p.name}</div>
-        <div class="text-[11px] text-indigo-400 font-semibold">${p.score} pts</div>
-      </div>
-    `;
-    leaderboardList.appendChild(item);
-    if (p.id === myId) {
-      myScore = p.score;
-      currentScoreDisplay.textContent = String(myScore);
-    }
-  });
-  show(leaderboardStrip);
+  const me = list.find(p => p.id === myId);
+  if (me) {
+    myScore = me.score;
+    if (currentScoreDisplay) currentScoreDisplay.textContent = String(myScore);
+  }
+  // Update quiz participants badges in real-time
+  try { renderQuizParticipants(); } catch {}
 }
 
 function renderLobby({ topics, topic, participants }) {
@@ -158,11 +203,14 @@ function renderLobby({ topics, topic, participants }) {
     const opt = document.createElement('option');
     opt.value = t; opt.textContent = t; if (t === topic) opt.selected = true; topicSelect.appendChild(opt);
   });
-  // participants
+  // participants (lobby shows avatars without score badges)
   lobbyParticipants.innerHTML = '';
   participants.forEach(p => {
     const img = document.createElement('img');
-    img.src = p.avatar; img.alt = p.name; img.title = p.name; img.className = 'avatar border border-gray-200';
+    img.src = p.avatar;
+    img.alt = p.name;
+    img.title = p.name;
+    img.className = 'avatar border border-gray-200';
     lobbyParticipants.appendChild(img);
   });
   // reset Start Game button state (in case it was disabled on previous click)
@@ -186,20 +234,24 @@ function setProgress(index, total) {
 function renderQuestion(payload) {
   // payload: { index, total, question, options, deadlineTs }
   answered = false;
-  playerNameDisplay.textContent = myName;
-  currentScoreDisplay.textContent = String(myScore);
+  if (playerNameDisplay) playerNameDisplay.textContent = myName;
+  if (currentScoreDisplay) currentScoreDisplay.textContent = String(myScore);
 
   questionText.textContent = payload.question;
+  try { questionText.classList.add('fade-in'); setTimeout(() => questionText.classList.remove('fade-in'), 500); } catch {}
   optionsContainer.innerHTML = '';
   payload.options.forEach((option, index) => {
     const optionCard = document.createElement('div');
-    optionCard.className = 'option-card border-2 rounded-lg p-4 hover:border-indigo-500';
+    optionCard.className = 'option-card border-2 rounded-lg p-4 hover:border-indigo-500 fade-in';
     optionCard.innerHTML = `
-      <div class="flex items-center">
-        <div class="flex-shrink-0 w-8 h-8 dark-option-label rounded-full flex items-center justify-center mr-3">
-          <span class="text-sm font-semibold">${String.fromCharCode(65 + index)}</span>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 w-8 h-8 dark-option-label rounded-full flex items-center justify-center mr-3">
+            <span class="text-sm font-semibold">${String.fromCharCode(65 + index)}</span>
+          </div>
+          <span class="text-slate-200">${option}</span>
         </div>
-        <span class="text-slate-200">${option}</span>
+        <div class="points-feedback hidden"></div>
       </div>
     `;
     optionCard.addEventListener('click', () => onSelect(index, optionCard));
@@ -209,6 +261,8 @@ function renderQuestion(payload) {
   setProgress(payload.index, payload.total);
   setTimerFromDeadline(payload.deadlineTs);
   statusHint.textContent = '';
+  // ensure participants row is populated when a question displays
+  try { renderQuizParticipants(); } catch {}
 }
 
 function onSelect(index, element) {
@@ -219,6 +273,8 @@ function onSelect(index, element) {
   element.classList.add('selected');
   // send to server
   socket.emit('answer', { choice: index });
+  // prevent double clicking
+  try { document.querySelectorAll('.option-card').forEach(c => c.style.pointerEvents = 'none'); } catch {}
 }
 
 function renderReveal({ correctIndex, perPlayer }) {
@@ -236,11 +292,7 @@ function renderReveal({ correctIndex, perPlayer }) {
 }
 
 function renderCountdown({ deadlineTs }) {
-  hide(resultsScreen);
-  show(quizScreen);
-  statusHint.textContent = 'Round starting...';
-  questionText.textContent = 'Get ready!';
-  optionsContainer.innerHTML = '';
+  // Not used for UI transitions anymore; countdown is shown on Start button
   setTimerFromDeadline(deadlineTs);
 }
 
@@ -269,6 +321,8 @@ function renderGameOver({ final }) {
 socket.on('connect', () => {
   myId = socket.id;
   try { console.log('[SOCKET] connected', { myId }); } catch {}
+  // Ensure we are in the participants list immediately on fresh loads
+  try { autoJoinIfNeeded(); } catch {}
 });
 
 socket.on('leaderboard', (list) => {
@@ -284,8 +338,7 @@ socket.on('phase', ({ phase }) => {
 });
 
 socket.on('lobbyState', (payload) => {
-  if (!hasJoined) return; // only show after joining
-  // Update list and topics always
+  // Update list and topics always (render even before joining so lobby shows in embeds)
   renderLobby(payload);
   // remember for results screen
   lastTopic = payload.topic || lastTopic;
@@ -307,20 +360,11 @@ socket.on('lobbyState', (payload) => {
 
 socket.on('countdown', (payload) => {
   console.log('[SOCKET] countdown received', { myId, payload });
-  // Only participate if server indicates this client is in the participants list (if provided)
   const listed = Array.isArray(payload.participants) ? payload.participants.includes(myId) : true;
-  if (!listed) {
-    // ignore countdown, remain in lobby
-    currentPhase = 'countdown';
-    inRound = false;
-    console.log('[SOCKET] countdown ignored; not listed in participants');
-    return;
-  }
+  // Keep lobby visible; show countdown on Start button text
   currentPhase = 'countdown';
-  inRound = true;
-  hide(welcomeScreen);
-  hide(lobbyScreen);
-  renderCountdown(payload);
+  inRound = !!listed; // mark that we will join the upcoming round if listed
+  try { updateStartButtonCountdown(payload.deadlineTs); } catch {}
 });
 
 socket.on('question', (payload) => {
@@ -346,21 +390,30 @@ socket.on('gameOver', (payload) => {
   currentPhase = 'finished';
 });
 
-// --- UI events ---
-nameForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const name = document.getElementById('userName').value.trim();
-  const avatar = document.getElementById('avatarUrl').value.trim();
-  if (!name) return;
-  myName = name;
-  myAvatar = avatar;
-  socket.emit('join', { name, avatar });
-  hasJoined = true;
-  hide(welcomeScreen);
-  show(lobbyScreen);
-  currentPhase = 'lobby';
-  inRound = false;
+// Immediate feedback for the answering player
+socket.on('answerFeedback', ({ yourChoice, correctIndex, correct, delta }) => {
+  try {
+    const cards = Array.from(document.querySelectorAll('.option-card'));
+    const chosen = cards[yourChoice];
+    const correctEl = cards[correctIndex];
+    if (chosen) {
+      chosen.classList.add(correct ? 'correct' : 'incorrect');
+      // use embedded points-feedback node for animated points
+      const pf = chosen.querySelector('.points-feedback');
+      if (pf) {
+        pf.textContent = `${delta > 0 ? '+' : ''}${delta}pts`;
+        pf.className = `points-feedback ml-3 font-semibold ${correct ? 'text-green-300' : 'text-red-300'}`;
+        pf.classList.remove('hidden');
+      }
+    }
+    if (!correct && correctEl) {
+      correctEl.classList.add('correct');
+    }
+  } catch {}
 });
+
+// --- UI events ---
+// Name form removed: joining is expected via postMessage from embedding parent.
 
 topicSelect?.addEventListener('change', (e) => {
   const value = e.target.value;
@@ -437,8 +490,12 @@ function renderResultsMeta() {
     (lastParticipants || []).forEach(p => {
       const item = document.createElement('div');
       item.className = 'flex items-center gap-2';
+      const score = latestScores.get(p.id) ?? (typeof p.score === 'number' ? p.score : 0);
       item.innerHTML = `
-        <img class="avatar border border-gray-200" src="${p.avatar}" alt="${p.name}" />
+        <div class="avatar-wrap">
+          <img class="avatar border border-gray-200" src="${p.avatar}" alt="${p.name}" />
+          <div class="score-badge">${score}</div>
+        </div>
         <div class="text-sm text-gray-800">${p.name}</div>
       `;
       lobbyParticipantsResults.appendChild(item);

@@ -28,7 +28,7 @@ const io = new Server(server, {
 const ROOM_ID = 'global-room'; // single shared room for now
 const QUESTION_TIME_SEC = 10;
 const INTERMISSION_SEC = 2; // time to show correct answer before next question
-const PRE_START_COUNTDOWN_SEC = 5; // countdown when first player joins or host triggers
+const PRE_START_COUNTDOWN_SEC = 3; // shorter, simpler countdown
 const QUESTIONS_PER_ROUND = 10;
 
 const defaultRoomState = () => ({
@@ -218,6 +218,14 @@ io.on('connection', (socket) => {
 
     // live update leaderboard for excitement
     broadcastLeaderboard();
+
+    // immediate feedback to the answering player only
+    io.to(socket.id).emit('answerFeedback', {
+      yourChoice: idx,
+      correctIndex: q.correct,
+      correct,
+      delta,
+    });
   });
 
   socket.on('setTopic', ({ topic }) => {
