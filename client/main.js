@@ -1,6 +1,38 @@
 // Temporary: confirm client script is actually loading in the browser
 try { console.log('[UI] main.js initialized'); } catch {}
 
+// Celebration animation when local player wins
+function startCelebration() {
+  if (!celebrationLayer) return;
+  celebrationLayer.innerHTML = '';
+  celebrationLayer.classList.remove('hidden');
+  // radial burst
+  const burst = document.createElement('div');
+  burst.className = 'celebrate-burst';
+  celebrationLayer.appendChild(burst);
+
+  const emojis = ['🎉','🎊','🥳','✨','💯','🔥','👏','🏆'];
+  const count = 28;
+  for (let i = 0; i < count; i++) {
+    const e = document.createElement('div');
+    e.className = 'celebrate-emoji';
+    e.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    const x = Math.random() * 100; // percent across
+    const y = 70 + Math.random() * 20; // start near bottom
+    const delay = (Math.random() * 0.6).toFixed(2);
+    const rot = (Math.random() * 60 - 30).toFixed(0) + 'deg';
+    e.style.left = x + '%';
+    e.style.bottom = (100 - y) + 'px';
+    e.style.animationDelay = delay + 's';
+    e.style.setProperty('--rot', rot);
+    celebrationLayer.appendChild(e);
+  }
+  // auto hide layer after animation
+  setTimeout(() => {
+    if (celebrationLayer) { celebrationLayer.classList.add('hidden'); celebrationLayer.innerHTML = ''; }
+  }, 1800);
+}
+
 // Update the Start button text in the lobby to "Starting in N" during countdown
 function updateStartButtonCountdown(deadlineTs) {
   if (!startGameBtn || !deadlineTs) return;
@@ -111,6 +143,7 @@ const resultTitle = document.getElementById('resultTitle');
 const topicSelectResults = document.getElementById('topicSelectResults');
 const newGameBtn = document.getElementById('newGameBtn');
 const lobbyParticipantsResults = document.getElementById('lobbyParticipantsResults');
+const celebrationLayer = document.getElementById('celebrationLayer');
 
 // --- Client state ---
 let myName = '';
@@ -310,8 +343,11 @@ function renderGameOver({ final }) {
   // icon - trophy for winner, thumbs-up otherwise
   if (winner && winner.id === myId) {
     resultIcon.className = 'fas fa-trophy text-6xl text-yellow-500 mb-4';
+    try { startCelebration(); } catch {}
   } else {
     resultIcon.className = 'fas fa-thumbs-up text-6xl text-blue-500 mb-4';
+    // hide celebration if present
+    if (celebrationLayer) { celebrationLayer.classList.add('hidden'); celebrationLayer.innerHTML = ''; }
   }
   // also render topic/participants sections similar to lobby using last known data
   renderResultsMeta();
